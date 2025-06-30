@@ -1,6 +1,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:flutter/material.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
@@ -78,45 +79,104 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-  Future<void> signInWithGoogle() async {
-    try {
-      if (!mounted) return;
-      
-      setState(() => _isLoading = true);
-      
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) {
-        if (mounted) setState(() => _isLoading = false);
-        return;
-      }
-
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
+Future<void> signInWithGoogle() async {
+  try {
+    setState(() => _isLoading = true);
+    
+    // For web - use the new Google Identity Services
+    if (kIsWeb) {
+      final GoogleAuthProvider authProvider = GoogleAuthProvider();
       final UserCredential userCredential = 
-          await FirebaseAuth.instance.signInWithCredential(credential);
-
-      if (userCredential.user == null) {
-        if (mounted) setState(() => _isLoading = false);
-        return;
-      }
-
-      // Navigate based on user role
-      await _navigateBasedOnRole(userCredential.user!.uid);
-
-    } catch (e) {
-      debugPrint('Google Sign-In Error: $e');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = 'Google sign-in failed. Please try again.';
-        });
-      }
+          await FirebaseAuth.instance.signInWithPopup(authProvider);
+      
+      await _handleUserSignIn(userCredential);
+      return;
     }
+    
+    // For mobile - use traditional approach
+    final GoogleSignInAccount? googleUser = await GoogleSignIn(
+      clientId: '663828726292-qc0185o4vcdgcf9h3f3h4o22jl5ha007.apps.googleusercontent.com',
+    ).signIn();
+    
+    if (googleUser == null) return;
+    
+    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+    
+    final UserCredential userCredential = 
+        await FirebaseAuth.instance.signInWithCredential(credential);
+    
+    await _handleUserSignIn(userCredential);
+  } catch (e) {
+    setState(() => _errorMessage = 'Google sign-in failed. Please try again.');
+    debugPrint('Google Sign-In Error: $e');
+  } finally {
+    setState(() => _isLoading = false);
   }
+}
+Future<void> _handleUserSignIn(UserCredential userCredential) async {
+  if (userCredential.user != null) {
+    final isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
+    
+    if (isNewUser) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .set({
+        'name': userCredential.user!.displayName,
+        'email': userCredential.user!.email,
+        'role': null,
+        'profileComplete': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    }
+    
+    Get.offAll(() => const RoleSelectionScreen());
+  }
+}
+ 
+  // Future<void> signInWithGoogle() async {
+  //   try {
+  //     if (!mounted) return;
+      
+  //     setState(() => _isLoading = true);
+      
+  //     final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+  //     if (googleUser == null) {
+  //       if (mounted) setState(() => _isLoading = false);
+  //       return;
+  //     }
+
+  //     final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+  //     final credential = GoogleAuthProvider.credential(
+  //       accessToken: googleAuth.accessToken,
+  //       idToken: googleAuth.idToken,
+  //     );
+
+  //     final UserCredential userCredential = 
+  //         await FirebaseAuth.instance.signInWithCredential(credential);
+
+  //     if (userCredential.user == null) {
+  //       if (mounted) setState(() => _isLoading = false);
+  //       return;
+  //     }
+
+  //     // Navigate based on user role
+  //     await _navigateBasedOnRole(userCredential.user!.uid);
+
+  //   } catch (e) {
+  //     debugPrint('Google Sign-In Error: $e');
+  //     if (mounted) {
+  //       setState(() {
+  //         _isLoading = false;
+  //         _errorMessage = 'Google sign-in failed. Please try again.';
+  //       });
+  //     }
+  //   }
+  // }
 
   bool _isValidEmail(String email) {
     const pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
