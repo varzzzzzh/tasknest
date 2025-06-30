@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # tasknest
 
 A new Flutter project.
@@ -14,3 +15,6 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+=======
+# tasknest
+>>>>>>> 2232a972144a2138a9b7848a581136e28c9501f5
