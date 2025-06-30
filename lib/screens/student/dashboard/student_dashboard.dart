@@ -1036,7 +1036,8 @@ Widget _buildRecentTasksSection() {
       ),
     ],
   );
-} void _showAllTasksDialog() {
+} 
+void _showAllTasksDialog() {
   Get.dialog(
     Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -1089,7 +1090,7 @@ Widget _buildRecentTasksSection() {
                           StreamBuilder<QuerySnapshot>(
                             stream: _firestore
                                 .collection('tasks')
-                                .where('teacherId', isEqualTo: _user?.uid)
+                                .where('className', whereIn: _classes) // Filter by student's classes
                                 .where('status', isEqualTo: 'active')
                                 .orderBy('createdAt', descending: true)
                                 .snapshots(),
@@ -1120,7 +1121,7 @@ Widget _buildRecentTasksSection() {
                           StreamBuilder<QuerySnapshot>(
                             stream: _firestore
                                 .collection('tasks')
-                                .where('teacherId', isEqualTo: _user?.uid)
+                                .where('className', whereIn: _classes) // Filter by student's classes
                                 .where('status', isEqualTo: 'completed')
                                 .orderBy('createdAt', descending: true)
                                 .snapshots(),
