@@ -105,16 +105,6 @@ A demo recording of the app in action is included in this repo:
 
 ---
 
-## 📱 Screenshots
-
-> Add screenshots of the login, teacher dashboard, and student dashboard here for a much stronger first impression.
-
-| Login | Teacher Dashboard | Student Dashboard |
-|---|---|---|
-| _add image_ | _add image_ | _add image_ |
-
----
-
 ## 📦 Getting Started
 
 ### Prerequisites
